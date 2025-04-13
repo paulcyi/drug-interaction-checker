@@ -1,4 +1,5 @@
 import streamlit as st
+from src.utils.fuzzy_match import match_drug
 
 # ---- Mocked interaction data ----
 interactions = {
@@ -11,6 +12,9 @@ interactions = {
 
 # ---- Core logic ----
 def check_interaction(drug1, drug2):
+    drug1 = match_drug(drug1)
+    drug2 = match_drug(drug2)
+
     pair = (drug1.lower(), drug2.lower())
     reverse_pair = (drug2.lower(), drug1.lower())
 
@@ -35,8 +39,15 @@ with st.form("interaction_form"):
 
     if submitted:
         if drug1 and drug2:
-            result = check_interaction(drug1, drug2)
-            st.markdown(f"### 🔍 Result")
-            st.success(f"**{drug1.title()} + {drug2.title()}** → {result}")
+            matched1 = match_drug(drug1)
+            matched2 = match_drug(drug2)
+
+            result = check_interaction(matched1, matched2)
+
+            st.markdown("### 🔍 Result")
+            st.success(f"**{matched1.title()} + {matched2.title()}** → {result}")
+
+            if drug1.lower() != matched1.lower() or drug2.lower() != matched2.lower():
+                st.info(f"Showing results for corrected spelling: **{matched1.title()} + {matched2.title()}**")
         else:
             st.warning("Please enter two drug names.")

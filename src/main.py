@@ -1,4 +1,5 @@
 import requests
+from src.utils.fuzzy_match import match_drug
 
 interactions = {
     ("aspirin", "ibuprofen"): "Increased risk of bleeding",
@@ -31,27 +32,42 @@ def check_interaction(drug1, drug2):
 
 
 def check_interaction_from_rxcuis(rxcui1, rxcui2):
-    url = f"https://rxnav.nlm.nih.gov/REST/interaction/list.json?rxcuis={rxcui1}+{rxcui2}"
-    response = requests.get(url)
-    data = response.json()
+    url = f"https://rxnav.nlm.nih.gov/REST/interaction/interaction.json?rxcui={rxcui1}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; DrugCheckerBot/1.0; +https://github.com/paulcyi)"
+    }
+    response = requests.get(url, headers=headers)
+
+    print(f"🔗 Hitting URL: {url}")
+    print(f"API status: {response.status_code}")
+    print(f"API raw response (preview):\n{response.text[:300]}")
 
     try:
-        interactions = data['fullInteractionTypeGroup'][0]['fullInteractionType'][0]['interactionPair']
+        data = response.json()
+    except requests.exceptions.JSONDecodeError:
+        return "❌ API returned an unexpected response (not JSON)."
+
+    try:
+        interactions = data['interactionTypeGroup'][0]['interactionType'][0]['interactionPair']
         for interaction in interactions:
-            return interaction['description']
+            if rxcui2 in interaction['interactionConcept'][1]['minConceptItem']['rxcui']:
+                return interaction['description']
+        return "No interaction found between these two drugs."
     except (KeyError, IndexError):
-        return "No known interaction or drugs not found in interaction database."
+        return "ℹ️ No known interaction or drugs not found in interaction database."
 
 
 if __name__ == "__main__":
-    drug1 = "aspirin"
-    drug2 = "ibuprofen"
+    print("Welcome to the Drug Interaction Checker")
+    drug1 = input("Enter the first drug: ").strip()
+    drug2 = input("Enter the second drug: ").strip()
 
     rxcui1 = get_rxcui(drug1)
     rxcui2 = get_rxcui(drug2)
 
     if rxcui1 and rxcui2:
         interaction_result = check_interaction_from_rxcuis(rxcui1, rxcui2)
-        print(f"Interaction between {drug1.title()} and {drug2.title()}: {interaction_result}")
+        print(f"\nInteraction between {drug1.title()} and {drug2.title()}:")
+        print(interaction_result)
     else:
-        print("One or both drugs not recognized.")
+        print("\n❌ One or both drugs not recognized.")

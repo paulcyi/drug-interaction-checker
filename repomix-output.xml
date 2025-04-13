@@ -1,0 +1,279 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+<additional_info>
+
+</additional_info>
+
+</file_summary>
+
+<directory_structure>
+src/
+  main.py
+.gitignore
+app.py
+README.md
+requirements.txt
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="app.py">
+import streamlit as st
+
+# ---- Mocked interaction data ----
+interactions = {
+    ("aspirin", "ibuprofen"): "Increased risk of bleeding",
+    ("acetaminophen", "alcohol"): "Increased risk of liver damage",
+    ("lisinopril", "potassium"): "Risk of high potassium levels",
+    ("tadalafil", "nitrates"): "May cause dangerous drop in blood pressure"
+}
+
+
+# ---- Core logic ----
+def check_interaction(drug1, drug2):
+    pair = (drug1.lower(), drug2.lower())
+    reverse_pair = (drug2.lower(), drug1.lower())
+
+    if pair in interactions:
+        return interactions[pair]
+    elif reverse_pair in interactions:
+        return interactions[reverse_pair]
+    else:
+        return "No known interaction."
+
+
+# ---- Streamlit App ----
+st.set_page_config(page_title="Check My Meds", page_icon="💊")
+
+st.title("💊 Check My Meds")
+st.subheader("Instantly check for potential drug-drug interactions")
+
+with st.form("interaction_form"):
+    drug1 = st.text_input("First drug")
+    drug2 = st.text_input("Second drug")
+    submitted = st.form_submit_button("Check Interaction")
+
+    if submitted:
+        if drug1 and drug2:
+            result = check_interaction(drug1, drug2)
+            st.markdown(f"### 🔍 Result")
+            st.success(f"**{drug1.title()} + {drug2.title()}** → {result}")
+        else:
+            st.warning("Please enter two drug names.")
+</file>
+
+<file path="src/main.py">
+import requests
+
+interactions = {
+    ("aspirin", "ibuprofen"): "Increased risk of bleeding",
+    ("acetaminophen", "alcohol"): "Increased risk of liver damage",
+    ("lisinopril", "potassium"): "Risk of high potassium levels"
+}
+
+
+def get_rxcui(drug_name):
+    url = f"https://rxnav.nlm.nih.gov/REST/rxcui.json?name={drug_name}"
+    response = requests.get(url)
+    data = response.json()
+
+    try:
+        return data["idGroup"]["rxnormId"][0]
+    except (KeyError, IndexError):
+        return None
+
+
+def check_interaction(drug1, drug2):
+    pair = (drug1.lower(), drug2.lower())
+    reverse_pair = (drug2.lower(), drug1.lower())
+
+    if pair in interactions:
+        return interactions[pair]
+    elif reverse_pair in interactions:
+        return interactions[reverse_pair]
+    else:
+        return "No known interaction"
+
+
+def check_interaction_from_rxcuis(rxcui1, rxcui2):
+    url = f"https://rxnav.nlm.nih.gov/REST/interaction/interaction.json?rxcui={rxcui1}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; DrugCheckerBot/1.0; +https://github.com/paulcyi)"
+    }
+    response = requests.get(url, headers=headers)
+
+    print(f"🔗 Hitting URL: {url}")
+    print(f"API status: {response.status_code}")
+    print(f"API raw response (preview):\n{response.text[:300]}")
+
+    try:
+        data = response.json()
+    except requests.exceptions.JSONDecodeError:
+        return "❌ API returned an unexpected response (not JSON)."
+
+    try:
+        interactions = data['interactionTypeGroup'][0]['interactionType'][0]['interactionPair']
+        for interaction in interactions:
+            if rxcui2 in interaction['interactionConcept'][1]['minConceptItem']['rxcui']:
+                return interaction['description']
+        return "No interaction found between these two drugs."
+    except (KeyError, IndexError):
+        return "ℹ️ No known interaction or drugs not found in interaction database."
+
+
+if __name__ == "__main__":
+    print("Welcome to the Drug Interaction Checker")
+    drug1 = input("Enter the first drug: ").strip()
+    drug2 = input("Enter the second drug: ").strip()
+
+    rxcui1 = get_rxcui(drug1)
+    rxcui2 = get_rxcui(drug2)
+
+    if rxcui1 and rxcui2:
+        interaction_result = check_interaction_from_rxcuis(rxcui1, rxcui2)
+        print(f"\nInteraction between {drug1.title()} and {drug2.title()}:")
+        print(interaction_result)
+    else:
+        print("\n❌ One or both drugs not recognized.")
+</file>
+
+<file path=".gitignore">
+.DS_Store
+__pycache__/
+.env
+*.pyc
+venv/
+</file>
+
+<file path="README.md">
+# 💊 CheckMyMeds
+
+**CheckMyMeds** is a modern, AI-powered medication safety platform designed to help users quickly identify potential drug interactions, manage personal medication profiles, and receive personalized health insights. Built for families, caregivers, veterans, and anyone taking multiple medications, CheckMyMeds aims to make med safety clear, accessible, and intelligent.
+
+---
+
+## 🚀 Current Features
+
+- ✅ Simple, clean UI built with Streamlit
+- ✅ Basic drug interaction checker using mocked data (DrugBank API coming)
+- ✅ Domain secured: [checkmymeds.app](https://checkmymeds.app)
+- ✅ Designed for eventual iOS + Android native apps
+
+---
+
+## 🧠 Upcoming AI Features
+
+- 🔍 AI-generated explanations for drug interactions in plain English
+- 🔠 Fuzzy matching for typos and brand/generic names
+- 📊 Risk scoring based on medication class, age, or conditions
+- 🧬 NLP summarization of side effects, risks, and labels
+
+---
+
+## 📦 Roadmap
+
+### ✅ MVP Goals (Next 1–2 Months)
+- Deploy live to Streamlit Cloud at `checkmymeds.app`
+- Add DrugBank API integration with fallback to mock data
+- Add login + saved profiles
+- Limit free tier to 5 checks/day
+- Add disclaimer + analytics
+
+### 🧪 Premium Tier Goals (3–4 Months)
+- Unlimited checks
+- AI-powered explainers
+- Med reminders + caregiver alerts
+- Shared family plans + history logs
+
+### 🔬 Long-Term
+- NLP-based drug name interpreter
+- Risk prediction models
+- Mobile app (native iOS + Android)
+- Partnerships with pharmacies or telehealth platforms
+
+---
+
+## 💸 Pricing Model (Planned)
+
+| Tier       | Features                                             | Price           |
+|------------|------------------------------------------------------|------------------|
+| Free       | 5 checks/day, basic tips, ads                        | $0/month         |
+| Premium    | Unlimited checks, reminders, saved profiles, AI      | $4.99–$7.99/mo   |
+| Family     | Shared accounts, caregiver alerts                    | +$2/user         |
+
+---
+
+## 👀 Live Demo (Coming Soon)
+[checkmymeds.app](https://checkmymeds.app)
+
+---
+
+## 🧑‍💻 Tech Stack
+
+- Python 3.12
+- Streamlit
+- DrugBank API (in progress)
+- Future integrations: FastAPI backend, Firebase or Supabase for auth + storage
+- Designed for easy port to Swift (iOS) and Kotlin (Android)
+
+---
+
+## ⚠️ Disclaimer
+
+This app is for informational purposes only and is **not medical advice**. Always consult a healthcare professional before making decisions based on medication interaction results.
+
+---
+
+## ❤️ Built By
+
+**Paul Yi** – Veteran, health tech builder, and AI engineer in progress
+[paulyi.dev](https://paulyi.dev)
+
+---
+
+_If you're interested in partnering, testing early features, or helping bring CheckMyMeds to life, reach out!_
+</file>
+
+<file path="requirements.txt">
+requests
+streamlit
+</file>
+
+</files>
