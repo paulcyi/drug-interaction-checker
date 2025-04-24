@@ -120,14 +120,16 @@ def display_openfda_results(results, drug1, drug2):
 
         for section, texts in results['highlighted_texts'].items():
             if texts:
-                with st.expander(
-                        f"From {section.replace('_', ' ').title()} Section"):
-                    for text in texts:
-                        st.markdown("📄 **Label Snippet:**")
-                        st.markdown(f"> {text}")
+                for text in texts:
+                    # Show simplified summary FIRST
+                    summary = generate_patient_friendly_summary(text)
+                    st.markdown(f"🧠 **What This Means:**\n\n{summary}")
 
-                        summary = generate_patient_friendly_summary(text)
-                        st.markdown(f"🧠 **What This Means:**\n\n{summary}")
+                    # Show full label snippet in expander
+                    with st.expander(
+                            f"📄 See the original label text from {section.replace('_', ' ').title()}"
+                    ):
+                        st.markdown("> " + text)
     else:
         st.info(
             f"No mentions of {drug2} found in {drug1}'s OpenFDA drug information."
