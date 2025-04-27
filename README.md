@@ -74,8 +74,7 @@ Reach out or open an Issue!
 
 ## License
 
-This project is licensed under the MIT License.  
-(You can modify this section if you want a different license.)
+This project is licensed under the [MIT License](LICENSE).
 
 ---
 
