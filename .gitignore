@@ -1,0 +1,28 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Caches
+.cache/
+*.log
+
+# Environment folders
+.venv/
+env/
+venv/
+ENV/
+
+# Streamlit temp files
+.streamlit/config.toml
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDEs / Editors
+.vscode/
+.idea/
+
+# Replit config
+.replit
